@@ -1,0 +1,100 @@
+---
+  - name: install web-tools
+    apt: name={{ item }} state=latest update_cache=yes
+    loop: ['default-jre']
+
+  - name: Ensure jenkins directory on jenkins slave
+    become: yes
+    become_method: sudo
+    file:
+      state: directory
+      owner: "{{ jenkins_slave_user }}"
+      group: "{{ jenkins_slave_group }}"
+      path: /var/jenkins_home
+
+  # - name: Check if Jenkins JNLP slave variables are defined
+  #   assert:
+  #     that:
+  #       - "jenkins_master is defined"
+  #       #- "jenkins_slave_secret is defined"
+  #   tags:
+  #     - jenkins-slave
+
+  - name: Make Jenkins JNLP slave directories
+    become: yes
+    become_method: sudo
+    file:
+      path: "{{ item }}"
+      state: directory
+      owner: "{{ jenkins_slave_user }}"
+      group: "{{ jenkins_slave_group }}"
+    with_items:
+      - "{{ jenkins_slave_home }}"
+      - "{{ jenkins_slave_root }}/bin"
+    tags:
+      - jenkins-slave
+
+  - name: "Register jenkins agent on master using groovy script"
+    jenkins_script:
+      user: "{{ jenkins_master_user }}"
+      password: "{{ jenkins_master_password }}"
+      validate_certs: false
+      timeout: 120
+      url: "{{ jenkins_master }}"
+      script: "{{ lookup('template', 'add_slave.groovy.j2') }}"
+    tags:
+      - register
+
+  - name: Get the secret jenkins slave
+    uri:
+      url: "{{ jenkins_master }}/computer/{{ jenkins_slave_name }}/slave-agent.jnlp"
+      method: GET
+      force_basic_auth: true
+      user: "{{ jenkins_master_user }}"
+      password: "{{ jenkins_master_password }}"
+      return_content: true
+    register: jenkins_jnlp_endpoint_response
+    tags:
+      - register
+
+  - name: Extract Slave secret from http response
+    set_fact:
+      jenkins_slave_secret: "{{ jenkins_jnlp_endpoint_response.content | regex_search('([a-z0-9]*)(?=</argument>)') }}"
+      skip_start_service: false
+    tags:
+      - register
+
+  - name: Template Jenkins JNLP slave files
+    become: yes
+    become_method: sudo
+    template:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+    with_items:
+      - { src: jenkins-slave.service, dest: /etc/systemd/system/jenkins-slave.service, mode: 755 }
+      - { src: jenkins-slave.default, dest: /etc/default/jenkins-slave, mode: 644 }
+    notify: Start Jenkins JNLP slave
+    tags: jenkins-slave
+
+
+
+  # - name: get token
+  #   uri:
+  #     url: "http://54.158.110.9/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)"
+  #     user: {{USERNAME}}
+  #     password: {{PASSWORD}}
+  #     force_basic_auth: yes
+  #     return_content: yes
+  #   register: token
+
+  # - name: get secret
+  #   uri:
+  #     url: "http://54.158.110.9/computer/{{JENKINS_NODE_NAME}}/slave-agent.jnlp | sed "s/.*<application-desc main-class=\"hudson.remoting.jnlp.Main\"><argument>\([a-z0-9]*\).*/\1/""
+  #     user: {{USERNAME}}
+  #     password: {{PASSWORD}}
+  #     token: {{token}}
+  #     force_basic_auth: yes
+  #     return_content: yes
+  #   register: secret
+
+  

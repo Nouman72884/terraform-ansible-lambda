@@ -1,0 +1,7 @@
+---
+  - hosts: slaves
+    become: true
+    roles:
+      - { role: slaves,
+          jenkins_master: http://35.173.253.173/ }
+          #jenkins_slave_secret: 2446c122dce9879a13b835245b867e76dc30cf9b7007d53876750a1887a51a36}

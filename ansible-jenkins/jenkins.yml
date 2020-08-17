@@ -1,0 +1,11 @@
+---
+  - hosts: jenkins
+    become: true
+    roles:
+      - docker
+      - jenkins
+      
+
+  
+      
+

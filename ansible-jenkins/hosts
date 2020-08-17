@@ -1,0 +1,13 @@
+[all]
+jenkins ansible_host=54.80.44.192 ansible_user=ubuntu
+
+[master]
+jenkins ansible_host=54.80.44.192 ansible_user=ubuntu
+
+[slaves]
+slave1 ansible_host=10.0.4.217 ansible_user=ubuntu
+slave2 ansible_host=10.0.3.140 ansible_user=ubuntu
+slave3 ansible_host=10.0.3.248 ansible_user=ubuntu
+slave4 ansible_host=10.0.4.46 ansible_user=ubuntu
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3

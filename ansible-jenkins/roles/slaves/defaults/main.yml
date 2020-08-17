@@ -1,0 +1,11 @@
+---
+  jenkins_slave_user: ubuntu
+  jenkins_slave_group: ubuntu
+  jenkins_slave_name: "{{ inventory_hostname }}"
+  jenkins_slave_java: /usr/bin/java
+  jenkins_master_user: "admin"
+  jenkins_slave_home: /var/jenkins_home
+  jenkins_master_password: "54c79b3409ba4edf8702212bed05620b"
+  jenkins_slave_description: "{{ jenkins_slave_name }}"
+  jenkins_slave_nb_executor: 2
+  jenkins_slave_labels: "{{ jenkins_slave_name }}"

@@ -1,0 +1,11 @@
+---
+  - name: Start Jenkins JNLP slave
+    become: yes
+    become_method: sudo
+    systemd:
+      name: jenkins-slave
+      enabled: yes
+      state: restarted
+      daemon_reload: yes
+    tags:
+      - jenkins-slave

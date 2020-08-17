@@ -1,0 +1,81 @@
+---
+  - name: Ensure jenkins directory on docker host
+    file:
+      state: directory
+      owner: '1000'
+      group: '1000'
+      path: /var/jenkins_home
+
+  - name: copy Dockerfile
+    template: src=Dockerfile dest=./Dockerfile 
+
+  - name: Docker Build
+    shell: |
+      docker build . -t jenkins-master
+
+  - name: Get infos on container
+    docker_container_info:
+      name: jenkins-master
+    register: result
+
+  - name: Does container exist?
+    debug:
+      msg: "The container {{ 'exists' if result.exists else 'does not exist' }}"
+
+  - name: Stop a container
+    docker_container:
+      name: jenkins-master
+      state: stopped
+    when: result.exists
+
+  - name: remove container
+    docker_container:
+      name: jenkins-master
+      state: absent
+    when: result.exists
+
+
+  - name: Docker Run
+    shell: |
+      docker run \
+      --restart=always \
+      -d \
+      -p 80:8080 \
+      -p 50000:50000 \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      -v /var/jenkins_home:/var/jenkins_home \
+      --name jenkins-master \
+      jenkins-master
+
+  - name: get contents of file
+    command: cat /var/jenkins_home/secrets/initialAdminPassword
+    register: filename
+    become: true # use case specific option
+
+  - name: viewing the contents
+    debug:
+      msg: "{{filename.stdout}}"
+
+  
+
+  # - name: Ensure jenkins directory on docker host
+  #   file:
+  #     state: directory
+  #     owner: '1000'
+  #     group: '1000'
+  #     path: /var/jenkins_home
+
+  # - name: Pull the latest official jenkins docker image
+  #   docker_image:
+  #     name: "jenkins:latest"
+
+  # - name: Create a container from the jenkins docker image
+  #   docker_container:
+  #     name: "jenkins-server"
+  #     image: "jenkins"
+  #     ports:
+  #       - 80:8080
+  #     volumes:
+  #       - "/var/jenkins_home:/var/jenkins_home"
+  #     state: present
+  #     recreate: no
